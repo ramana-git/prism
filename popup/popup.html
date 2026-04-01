@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prism</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e8eaf0;
+      --muted: #6b7080;
+      --accent: #4f9eff;
+      --success: #3ecf8e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    body {
+      width: 360px;
+      min-height: 200px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px;
+    }
+
+    /* ── Header ── */
+    .header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, #4f9eff, #7c3aed);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    .header-title {
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: -0.01em;
+    }
+    .header-sub {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      margin-left: auto;
+    }
+    .header-settings {
+      width: 24px; height: 24px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+    .header-settings:hover { color: var(--text); }
+
+    /* ── Domain status banner ── */
+    .domain-banner {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .domain-banner.active {
+      background: rgba(62,207,142,0.06);
+      color: var(--success);
+    }
+    .domain-banner.inactive {
+      background: rgba(245,158,11,0.06);
+      color: var(--warning);
+    }
+    .domain-banner .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .domain-banner.active .dot { background: var(--success); }
+    .domain-banner.inactive .dot { background: var(--warning); }
+    .domain-banner .label { flex: 1; }
+    .btn-enable {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid rgba(79,158,255,0.3);
+      background: rgba(79,158,255,0.1);
+      color: var(--accent);
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .btn-enable:hover { background: rgba(79,158,255,0.2); }
+
+    /* ── Current Tab Panel ── */
+    .current-tab {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .tab-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .tab-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
+    .tab-title {
+      font-size: 12px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .assignment-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid;
+      margin-bottom: 10px;
+    }
+    .assignment-badge.none {
+      background: rgba(107,112,128,0.1);
+      border-color: var(--border);
+      color: var(--muted);
+    }
+
+    /* ── User selector ── */
+    .user-select-row {
+      display: flex;
+      gap: 6px;
+    }
+    .user-select {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 12px;
+      padding: 6px 10px;
+      outline: none;
+      cursor: pointer;
+    }
+    .user-select:focus { border-color: var(--accent); }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: #3b8be8; }
+    .btn-success {
+      background: rgba(62,207,142,0.15);
+      border-color: rgba(62,207,142,0.3);
+      color: var(--success);
+    }
+    .btn-success:hover { background: rgba(62,207,142,0.25); }
+    .btn-ghost {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--muted);
+    }
+    .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+    .btn-danger {
+      background: rgba(239,68,68,0.1);
+      border-color: rgba(239,68,68,0.25);
+      color: var(--danger);
+    }
+    .btn-danger:hover { background: rgba(239,68,68,0.2); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .action-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    /* ── Sessions list ── */
+    .sessions-section {
+      padding: 12px 16px;
+    }
+    .sessions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .session-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: border-color 0.15s;
+    }
+    .session-card:hover { border-color: #3a3d4a; }
+    .session-avatar {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .session-info { flex: 1; min-width: 0; }
+    .session-name {
+      font-weight: 500;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+    .session-meta {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .session-actions {
+      display: flex;
+      gap: 4px;
+    }
+    .btn-icon {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+    .btn-icon:hover { border-color: var(--text); color: var(--text); }
+    .btn-icon.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+    .empty-state {
+      text-align: center;
+      padding: 24px 16px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* ── Add user form ── */
+    .add-user-form {
+      padding: 0 16px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .input-row {
+      display: flex;
+      gap: 6px;
+    }
+    .input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 12px;
+      padding: 6px 10px;
+      outline: none;
+    }
+    .input:focus { border-color: var(--accent); }
+    .input::placeholder { color: var(--muted); }
+
+    .color-picker-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .color-swatch {
+      width: 24px; height: 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .color-swatch.selected { border-color: white; }
+
+    /* ── Status toast ── */
+    .toast {
+      position: fixed;
+      bottom: 12px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 12px;
+      display: none;
+      white-space: nowrap;
+      z-index: 100;
+    }
+    .toast.show { display: block; }
+    .toast.success { border-color: rgba(62,207,142,0.4); color: var(--success); }
+    .toast.error { border-color: rgba(239,68,68,0.4); color: var(--danger); }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 8px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .storage-info {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-icon">◈</div>
+    <div class="header-title">Prism</div>
+    <div class="header-sub" id="tabUrl">—</div>
+    <button class="header-settings" id="settingsBtn" title="Settings">⚙</button>
+  </div>
+
+  <!-- Domain status banner -->
+  <div class="domain-banner inactive" id="domainBanner">
+    <div class="dot"></div>
+    <span class="label" id="domainLabel">Not enabled for this site</span>
+    <button class="btn-enable" id="enableBtn">Enable</button>
+  </div>
+
+  <!-- Current Tab Assignment -->
+  <div class="current-tab" id="mainPanel">
+    <div class="section-label">Current Tab</div>
+    <div class="tab-info">
+      <div class="tab-dot" id="tabStatusDot"></div>
+      <div class="tab-title" id="tabTitle">Loading...</div>
+    </div>
+
+    <div id="assignmentBadge" class="assignment-badge none">
+      <span>⬜</span> <span id="assignmentText">Not assigned</span>
+    </div>
+
+    <div class="user-select-row">
+      <select class="user-select" id="userSelect">
+        <option value="">— Assign user —</option>
+      </select>
+      <button class="btn btn-primary" id="assignBtn">Assign</button>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-success" id="saveBtn" disabled>Save Session</button>
+      <button class="btn btn-ghost" id="unassignBtn" disabled>Unassign</button>
+    </div>
+  </div>
+
+  <!-- Add New User -->
+  <div class="add-user-form" style="padding-top: 12px;" id="addUserPanel">
+    <div class="section-label">Add User</div>
+    <div class="color-picker-row" id="colorPicker"></div>
+    <div class="input-row">
+      <input class="input" id="newUserName" placeholder="User name (e.g. Admin, User A)" maxlength="30">
+      <button class="btn btn-primary" id="addUserBtn">Add</button>
+    </div>
+  </div>
+
+  <!-- Saved Sessions -->
+  <div class="sessions-section" id="sessionsPanel">
+    <div class="section-label">Saved Sessions</div>
+    <div class="sessions-list" id="sessionsList">
+      <div class="empty-state">
+        No sessions saved yet.<br>Assign a user and click Save Session.
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="storage-info" id="storageInfo">storage: —</div>
+    <button class="btn btn-ghost" id="refreshBtn" style="font-size:11px; padding: 4px 8px;">↻ Refresh</button>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
