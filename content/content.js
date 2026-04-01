@@ -80,8 +80,79 @@
     }).catch(() => {});
   });
 
-  // ── Listen for restore commands from service worker ────────────────────────
+  // ── Tab title prefix (MutationObserver) ─────────────────────────────────────
+  // SPAs (Vue Router, React Router, etc.) set document.title on every route
+  // change. We use a MutationObserver on <title> to re-apply the prefix
+  // whenever the app changes it.
+  let prismTitlePrefix = null;
+  let titleObserver = null;
+  let applyingPrefix = false; // guard against infinite loop
+
+  function startTitleObserver() {
+    if (titleObserver) return;
+
+    const titleEl = document.querySelector('title');
+    if (!titleEl) return;
+
+    titleObserver = new MutationObserver(() => {
+      if (applyingPrefix || !prismTitlePrefix) return;
+      if (!document.title.startsWith(prismTitlePrefix)) {
+        applyingPrefix = true;
+        const cleaned = document.title.replace(/^\[.*?\]\s*/, '');
+        document.title = prismTitlePrefix + cleaned;
+        applyingPrefix = false;
+      }
+    });
+
+    titleObserver.observe(titleEl, { childList: true, characterData: true, subtree: true });
+  }
+
+  function applyTitlePrefix(prefix) {
+    prismTitlePrefix = prefix;
+    applyingPrefix = true;
+    const cleaned = document.title.replace(/^\[.*?\]\s*/, '');
+    document.title = prefix + cleaned;
+    applyingPrefix = false;
+    startTitleObserver();
+  }
+
+  function clearTitlePrefix() {
+    prismTitlePrefix = null;
+    if (titleObserver) {
+      titleObserver.disconnect();
+      titleObserver = null;
+    }
+    applyingPrefix = true;
+    document.title = document.title.replace(/^\[.*?\]\s*/, '');
+    applyingPrefix = false;
+  }
+
+  // Start observer once DOM is ready (handles <title> created after document_start)
+  if (document.querySelector('title')) {
+    startTitleObserver();
+  } else {
+    new MutationObserver((_, obs) => {
+      if (document.querySelector('title')) {
+        startTitleObserver();
+        obs.disconnect();
+      }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
+
+  // ── Listen for commands from service worker ────────────────────────────────
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'SET_TITLE_PREFIX') {
+      applyTitlePrefix(message.prefix);
+      sendResponse({ success: true });
+      return;
+    }
+
+    if (message.type === 'CLEAR_TITLE_PREFIX') {
+      clearTitlePrefix();
+      sendResponse({ success: true });
+      return;
+    }
+
     if (message.type === 'RESTORE_STORAGE') {
       const { localStorageData, sessionStorageData } = message;
 

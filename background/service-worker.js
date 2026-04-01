@@ -388,17 +388,13 @@ function clearBadge(tabId) {
 }
 
 // ─── Tab title prefix ────────────────────────────────────────────────────────
+// Delegates to the content script which uses a MutationObserver to persist
+// the prefix across SPA route changes (Vue Router, React Router, etc.)
 async function setTabTitlePrefix(tabId, userName) {
   try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      func: (name) => {
-        const prefix = `[${name}] `;
-        // Strip any existing Prism prefix before adding new one
-        const cleaned = document.title.replace(/^\[.*?\]\s*/, '');
-        document.title = prefix + cleaned;
-      },
-      args: [userName]
+    await chrome.tabs.sendMessage(tabId, {
+      type: 'SET_TITLE_PREFIX',
+      prefix: `[${userName}] `
     });
   } catch (e) {
     console.debug('[Prism] Could not set tab title:', e.message);
@@ -407,12 +403,7 @@ async function setTabTitlePrefix(tabId, userName) {
 
 async function clearTabTitlePrefix(tabId) {
   try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      func: () => {
-        document.title = document.title.replace(/^\[.*?\]\s*/, '');
-      }
-    });
+    await chrome.tabs.sendMessage(tabId, { type: 'CLEAR_TITLE_PREFIX' });
   } catch (e) {
     console.debug('[Prism] Could not clear tab title:', e.message);
   }
@@ -477,10 +468,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     setTimeout(() => {
       applySessionToTab(tabId, userId);
     }, 300);
-    // Re-apply title prefix after page's own title has settled
-    setTimeout(() => {
-      setTabTitlePrefix(tabId, userName);
-    }, 800);
   }
 });
 
