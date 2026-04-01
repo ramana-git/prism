@@ -77,6 +77,23 @@ Test multi-tenant apps, permission systems, or user-specific features by keeping
 
 ---
 
+## Why Prism?
+
+If you've used **SessionBox**, **MultiLogin**, or similar multi-session extensions, Prism is the lightweight, open-source alternative:
+
+| | Prism | SessionBox / MultiLogin |
+|---|---|---|
+| **Price** | Free, MIT licensed | Freemium / paid plans |
+| **Source** | Open source | Closed source |
+| **Privacy** | Zero telemetry, all data local | Account required, cloud sync |
+| **Permissions** | Per-domain, user-granted | Broad by default |
+| **Build step** | None — vanilla JS | N/A |
+| **Focus** | Testing & development workflows | General multi-account |
+
+Prism doesn't try to replace full browser profile isolation. It's purpose-built for **testing workflows** — QA engineers, developers, and AI agents who need to switch between user sessions quickly on the same domain.
+
+---
+
 ## Architecture
 
 ```
