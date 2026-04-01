@@ -217,6 +217,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       delete tabAssignments[message.tabId];
       chrome.storage.local.set({ tabAssignments });
       clearBadge(message.tabId);
+      clearTabTitlePrefix(message.tabId);
       sendResponse({ success: true });
       break;
     }
@@ -286,6 +287,12 @@ async function applySessionToTab(tabId, userId) {
     } catch (e) {
       console.debug('[Prism] Could not inject storage restore:', e.message);
     }
+  }
+
+  // 3. Prefix tab title with user name
+  const assignment = tabAssignments[tabId];
+  if (assignment) {
+    await setTabTitlePrefix(tabId, assignment.userName);
   }
 }
 
@@ -380,6 +387,37 @@ function clearBadge(tabId) {
   chrome.action.setBadgeText({ text: '', tabId });
 }
 
+// ─── Tab title prefix ────────────────────────────────────────────────────────
+async function setTabTitlePrefix(tabId, userName) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      func: (name) => {
+        const prefix = `[${name}] `;
+        // Strip any existing Prism prefix before adding new one
+        const cleaned = document.title.replace(/^\[.*?\]\s*/, '');
+        document.title = prefix + cleaned;
+      },
+      args: [userName]
+    });
+  } catch (e) {
+    console.debug('[Prism] Could not set tab title:', e.message);
+  }
+}
+
+async function clearTabTitlePrefix(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => {
+        document.title = document.title.replace(/^\[.*?\]\s*/, '');
+      }
+    });
+  } catch (e) {
+    console.debug('[Prism] Could not clear tab title:', e.message);
+  }
+}
+
 // ─── Functions injected into the page context ─────────────────────────────────
 
 function captureStorageFromPage() {
@@ -439,6 +477,10 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     setTimeout(() => {
       applySessionToTab(tabId, userId);
     }, 300);
+    // Re-apply title prefix after page's own title has settled
+    setTimeout(() => {
+      setTabTitlePrefix(tabId, userName);
+    }, 800);
   }
 });
 
